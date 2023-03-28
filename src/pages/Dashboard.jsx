@@ -1,15 +1,30 @@
-import { useContext } from "react"
-import DataContext from "../context/DataContext"
+import { useContext, useEffect, useState } from "react"
+import { DataContext, FilterContext } from "../context/MainContext"
 
-const Dashboard = ({ setVisibility, isFiltered }) => {
+const Dashboard = ({ setVisibility }) => {
+	const { isFiltered } = useContext(FilterContext)
 	const users = useContext(DataContext)
 	const dataIterable = users?.users
-	if (dataIterable) {
-		const filteredData = dataIterable.map((x) =>
-			Object.keys(x).filter((word, i) => word.match(isFiltered[i]))
+	const [dataFiltered, setDataFiltered] = useState([])
+
+	useEffect(() => {
+		const newdata = dataIterable?.map((el) =>
+			Object.keys(el)
+				.filter((key) => isFiltered.includes(key))
+				.reduce((acc, key) => {
+					if (typeof el[key] === "object" && el[key] !== null) {
+						return acc
+					} else {
+						acc[key] = el[key]
+						return acc
+					}
+				}, {})
 		)
-		console.log(filteredData)
-	}
+		setDataFiltered(newdata)
+	}, [isFiltered, dataIterable])
+
+	const fields =
+		dataFiltered && dataFiltered.length > 0 ? Object.keys(dataFiltered[0]) : []
 
 	return (
 		<section className='flex flex-col w-fit'>
@@ -17,24 +32,24 @@ const Dashboard = ({ setVisibility, isFiltered }) => {
 				className='self-start my-1 py-1 px-4 bg-white rounded-full'
 				onClick={() => setVisibility("absolute")}
 			>
-				Filters
+				Select Columns
 			</button>
 			<table className='border w-full h-full text-white'>
 				<thead>
 					<tr className='bg-white text-black'>
-						<th>ID</th>
-						<th>Name</th>
-						<th>Email</th>
-						<th>Phone</th>
+						{fields.map((x) => (
+							<th key={x}>{x.toUpperCase()}</th>
+						))}
 					</tr>
 				</thead>
-				{dataIterable?.map((x) => (
-					<tbody key={x.id}>
+				{dataFiltered?.map((x, i) => (
+					<tbody key={i}>
 						<tr className='bg-lime-900'>
-							<th className='border px-4 py-2'>{x.id}</th>
-							<th className='border px-4 py-2'>{x.name}</th>
-							<th className='border px-4 py-2'>{x.email}</th>
-							<th className='border px-4 py-2'>{x.phone}</th>
+							{Object.keys(x).map((key, i) => (
+								<th key={i} className='border px-4 py-2'>
+									{x[key]}
+								</th>
+							))}
 						</tr>
 					</tbody>
 				))}

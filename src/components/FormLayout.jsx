@@ -1,40 +1,49 @@
-import { useContext, useEffect, useState } from "react"
-import DataContext from "../context/DataContext"
+import { useContext, useState } from "react"
+import { FilterContext } from "../context/MainContext"
+import ButtonsCol from "./ButtonsCol"
+import useSearchBar from "../hooks/useSearchBar"
 
 const FormLayout = ({ visibility, setVisibility }) => {
-	const [fields, setFields] = useState()
-	const [filter, setFilter] = useState("")
-	const [fieldsFiltered, setFieldsFiltered] = useState()
-	const users = useContext(DataContext)
-	useEffect(() => {
-		if (users.users !== undefined) {
-			setFields(Object.keys(users?.users[0]))
-		}
-	}, [users])
-
-	useEffect(() => {
-		if (filter !== "") {
-			setFieldsFiltered(fields.filter((word, i) => word.match(filter)))
-		} else {
-			setFieldsFiltered(undefined)
-		}
-	}, [filter])
-
-	const handleSubmit = (e) => {
-		// e.prevent.default()
-		// setVisibility("hidden")
-	}
+	const { isFiltered, setIsFiltered, filtersInactive, setFiltersInactive } =
+		useContext(FilterContext)
 	const handleVisibility = () => {
 		setVisibility("hidden")
+	}
+	const [filter, setFilter] = useState("")
+
+	const { searchedFiltersInactive, searchedFilters } = useSearchBar({
+		filter,
+		isFiltered,
+		filtersInactive,
+	})
+
+	const handleFilters = (e) => {
+		const newFilters = [...isFiltered]
+		const newInactiveFilters = [...filtersInactive]
+		const valueCheck = e.target.value
+		const isActive = newFilters.find((x) => x === valueCheck)
+		if (!isActive) {
+			const index = filtersInactive.indexOf(valueCheck)
+			setIsFiltered([...newFilters, valueCheck])
+			setFiltersInactive(
+				newInactiveFilters.filter(
+					(x) => newInactiveFilters.indexOf(x) !== index
+				)
+			)
+		} else {
+			const index = isFiltered.indexOf(valueCheck)
+			setFiltersInactive([...newInactiveFilters, valueCheck])
+			setIsFiltered(newFilters.filter((x) => newFilters.indexOf(x) !== index))
+		}
 	}
 
 	return (
 		<section
 			className={`flex absolute justify-center items-center h-screen w-screen bg-slate-700 bg-opacity-40 ${visibility} `}
 		>
-			<form className='flex relative flex-col items-center justify-center h-1/2 w-1/4 bg-lime-900 rounded-2xl'>
+			<form className='flex relative flex-col items-center justify-between h-7/8 w-1/2 bg-lime-700 rounded-2xl py-4'>
 				<input
-					className='my-2 w-2/5 text-center'
+					className='my-2 w-2/5 text-center h-8 rounded-full'
 					type='text'
 					onChange={(e) => setFilter(e.target.value)}
 					value={filter}
@@ -47,27 +56,28 @@ const FormLayout = ({ visibility, setVisibility }) => {
 				>
 					X
 				</button>
-				{fieldsFiltered !== undefined
-					? fieldsFiltered?.map((x) => (
-							<div className='flex justify-between w-1/3' key={x} id={x}>
-								<label htmlFor={x} className='text-white'>
-									{x}
-								</label>
-								<input type='checkbox' name={x} id={x} />
-							</div>
-					  ))
-					: fields?.map((x) => (
-							<div className='flex justify-between w-1/3' key={x} id={x}>
-								<label htmlFor={x} className='text-white'>
-									{x}
-								</label>
-								<input type='checkbox' name={x} id={x} />
-							</div>
-					  ))}
-
+				<div className='flex w-full gap-4 py-4 px-6 text-center text-lg'>
+					<div className='flex flex-col w-full'>
+						<p className='bg-white'>Available Columns</p>
+						<ButtonsCol
+							buttonsText={
+								filter === "" ? filtersInactive : searchedFiltersInactive
+							}
+							handleFilters={handleFilters}
+						/>
+					</div>
+					<div className='flex flex-col w-full'>
+						<p className='bg-white'>Selected Columns</p>
+						<ButtonsCol
+							buttonsText={filter === "" ? isFiltered : searchedFilters}
+							handleFilters={handleFilters}
+						/>
+					</div>
+				</div>
 				<button
+					type='button'
 					className='py-1 px-4 bg-black text-white rounded-full mt-10'
-					onClick={handleSubmit}
+					onClick={handleVisibility}
 				>
 					Apply
 				</button>
