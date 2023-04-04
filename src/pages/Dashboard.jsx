@@ -8,23 +8,28 @@ const Dashboard = ({ setVisibility }) => {
 	const [dataFiltered, setDataFiltered] = useState([])
 
 	useEffect(() => {
-		const newdata = dataIterable?.map((el) =>
-			Object.keys(el)
-				.filter((key) => isFiltered.includes(key))
-				.reduce((acc, key) => {
-					if (typeof el[key] === "object" && el[key] !== null) {
-						return acc
-					} else {
-						acc[key] = el[key]
-						return acc
-					}
-				}, {})
-		)
+		const newdata = dataIterable?.map((obj) => recursiveFunction(obj))
 		setDataFiltered(newdata)
 	}, [isFiltered, dataIterable])
 
+	const recursiveFunction = (obj) => {
+		return Object.keys(obj)
+			.filter((key) => isFiltered.includes(key))
+			.reduce((acc, key) => {
+				if (typeof obj[key] === "object" && obj[key] !== null) {
+					const nestedObject = recursiveFunction(obj[key])
+					for (const nestedKey in nestedObject) {
+						acc[`${key}.${nestedKey}`] = nestedObject[nestedKey]
+					}
+				} else {
+					acc[key] = obj[key]
+				}
+				return acc
+			}, {})
+	}
 	const fields =
 		dataFiltered && dataFiltered.length > 0 ? Object.keys(dataFiltered[0]) : []
+	console.log(dataFiltered)
 
 	return (
 		<section className='flex flex-col w-fit'>
